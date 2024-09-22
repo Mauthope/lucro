@@ -15,6 +15,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      flex-direction: column;
       height: 100vh;
     }
 
@@ -26,6 +27,7 @@
       max-width: 600px;
       width: 100%;
       text-align: center;
+      margin-bottom: 30px;
     }
 
     h1 {
@@ -44,7 +46,7 @@
       background-color: #f9f9f9;
     }
 
-    #chartContainer {
+    #chartContainer, #chartContainer2 {
       margin-top: 20px;
     }
 
@@ -69,9 +71,23 @@
     </div>
   </div>
 
+  <div class="container">
+    <h1>Gráfico de Lucro por Unidade Vendida</h1>
+
+    <label for="filtroCliente">Selecione um cliente (Coluna 12):</label>
+    <select id="filtroCliente" onchange="gerarGraficoLucroPorUnidade()">
+      <option value="">Todos os clientes</option>
+    </select>
+
+    <div id="chartContainer2">
+      <canvas id="lucroPorUnidadeChart"></canvas>
+    </div>
+  </div>
+
   <script>
     let dadosExcel = [];
     let chart = null;
+    let chartLucroPorUnidade = null;
 
     window.onload = function() {
       fetch('lucratividade.xlsx')
@@ -84,11 +100,14 @@
           dadosExcel = jsonData.slice(1).map(row => ({
             filtro: row[6],   // Coluna 7 (filtro)
             cliente: row[11], // Coluna 12 (Cliente)
-            lucro: row[39]    // Coluna 40 (Lucro)
+            lucro: row[39],   // Coluna 40 (Lucro)
+            quantidade: row[23] // Coluna 24 (Quantidade)
           }));
 
           preencherFiltro();
+          preencherFiltroCliente();
           gerarGrafico(); // Gera o gráfico com todos os dados por padrão
+          gerarGraficoLucroPorUnidade(); // Gera o gráfico de lucro por unidade por padrão
         });
     };
 
@@ -100,6 +119,17 @@
         option.value = filtro;
         option.textContent = filtro;
         filtroSelect.appendChild(option);
+      });
+    }
+
+    function preencherFiltroCliente() {
+      let filtroClienteSelect = document.getElementById('filtroCliente');
+      let clientesUnicos = [...new Set(dadosExcel.map(d => d.cliente))];
+      clientesUnicos.forEach(cliente => {
+        let option = document.createElement('option');
+        option.value = cliente;
+        option.textContent = cliente;
+        filtroClienteSelect.appendChild(option);
       });
     }
 
@@ -146,6 +176,63 @@
               callbacks: {
                 label: function(tooltipItem) {
                   return 'Lucro: ' + tooltipItem.raw;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function gerarGraficoLucroPorUnidade() {
+      let clienteSelecionado = document.getElementById('filtroCliente').value;
+
+      let dadosFiltrados = clienteSelecionado ? 
+        dadosExcel.filter(d => d.cliente === clienteSelecionado) : dadosExcel;
+
+      // Calcular lucro por unidade
+      let dadosComLucroPorUnidade = dadosFiltrados.map(d => ({
+        cliente: d.cliente,
+        lucroPorUnidade: d.quantidade > 0 ? d.lucro / d.quantidade : 0
+      }));
+
+      // Ordenar pelo lucro por unidade em ordem decrescente
+      dadosComLucroPorUnidade.sort((a, b) => b.lucroPorUnidade - a.lucroPorUnidade);
+
+      let clientes = dadosComLucroPorUnidade.map(d => d.cliente);
+      let lucrosPorUnidade = dadosComLucroPorUnidade.map(d => d.lucroPorUnidade);
+      let cores = lucrosPorUnidade.map(lucro => lucro < 0 ? '#FF6384' : '#36A2EB'); // Vermelho para valores negativos
+
+      if (chartLucroPorUnidade) {
+        chartLucroPorUnidade.destroy();
+      }
+
+      let ctx = document.getElementById('lucroPorUnidadeChart').getContext('2d');
+      chartLucroPorUnidade = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: clientes, // Clientes como rótulos
+          datasets: [{
+            label: 'Lucro por Unidade',
+            data: lucrosPorUnidade,
+            backgroundColor: cores, // Aplicar cores baseadas nos lucros por unidade (negativo: vermelho)
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          },
+          plugins: {
+            legend: {
+              position: 'top',
+            },
+            tooltip: {
+              callbacks: {
+                label: function(tooltipItem) {
+                  return 'Lucro por Unidade: ' + tooltipItem.raw;
                 }
               }
             }

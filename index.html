@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gráfico Comparativo</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f4f9;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background-color: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    select {
+      margin: 10px 0;
+      padding: 10px;
+      font-size: 16px;
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      background-color: #f9f9f9;
+    }
+
+    #chartContainer {
+      margin-top: 20px;
+    }
+
+    canvas {
+      max-width: 100%;
+      height: auto;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h1>Gráfico Comparativo</h1>
+
+    <label for="filtro">Selecione um filtro (Coluna 7):</label>
+    <select id="filtro" onchange="gerarGrafico()">
+      <option value="">Escolha um valor</option>
+    </select>
+
+    <div id="chartContainer">
+      <canvas id="resultadoChart"></canvas>
+    </div>
+  </div>
+
+  <script>
+    let dadosExcel = [];
+    let chart = null;
+
+    window.onload = function () {
+      fetch('lucratividade.xlsx')
+        .then(response => response.arrayBuffer())
+        .then(data => {
+          let workbook = XLSX.read(data, { type: 'array' });
+          let sheet = workbook.Sheets[workbook.SheetNames[0]];
+          let jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+          dadosExcel = jsonData.slice(1).map(row => ({
+            filtro: row[6],   // Coluna 7 (filtro)
+            valor12: row[11], // Coluna 12
+            valor40: row[39]  // Coluna 40
+          }));
+
+          preencherFiltro();
+        });
+    };
+
+    function preencherFiltro() {
+      let filtroSelect = document.getElementById('filtro');
+      let filtrosUnicos = [...new Set(dadosExcel.map(d => d.filtro))];
+      filtrosUnicos.forEach(filtro => {
+        let option = document.createElement('option');
+        option.value = filtro;
+        option.textContent = filtro;
+        filtroSelect.appendChild(option);
+      });
+    }
+
+    function gerarGrafico() {
+      let filtroSelecionado = document.getElementById('filtro').value;
+
+      if (!filtroSelecionado) return;
+
+      let dadosFiltrados = dadosExcel.filter(d => d.filtro === filtroSelecionado);
+
+      let valor12Total = dadosFiltrados.reduce((acc, curr) => acc + (curr.valor12 || 0), 0);
+      let valor40Total = dadosFiltrados.reduce((acc, curr) => acc + (curr.valor40 || 0), 0);
+
+      if (chart) {
+        chart.destroy();
+      }
+
+      let ctx = document.getElementById('resultadoChart').getContext('2d');
+      chart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: ['Coluna 12', 'Coluna 40'],
+          datasets: [{
+            data: [valor12Total, valor40Total],
+            backgroundColor: ['#36A2EB', '#FF6384'],
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top',
+            }
+          }
+        }
+      });
+    }
+  </script>
+
+</body>
+
+</html>

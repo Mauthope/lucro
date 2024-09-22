@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gráfico Comparativo</title>
+  <title>Gráfico Comparativo de Clientes e Lucro</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -55,11 +54,10 @@
     }
   </style>
 </head>
-
 <body>
 
   <div class="container">
-    <h1>Gráfico Comparativo</h1>
+    <h1>Gráfico Comparativo de Clientes e Lucro</h1>
 
     <label for="filtro">Selecione um filtro (Coluna 7):</label>
     <select id="filtro" onchange="gerarGrafico()">
@@ -75,7 +73,7 @@
     let dadosExcel = [];
     let chart = null;
 
-    window.onload = function () {
+    window.onload = function() {
       fetch('lucratividade.xlsx')
         .then(response => response.arrayBuffer())
         .then(data => {
@@ -85,8 +83,8 @@
 
           dadosExcel = jsonData.slice(1).map(row => ({
             filtro: row[6],   // Coluna 7 (filtro)
-            valor12: row[11], // Coluna 12
-            valor40: row[39]  // Coluna 40
+            cliente: row[11], // Coluna 12 (Cliente)
+            lucro: row[39]    // Coluna 40 (Lucro)
           }));
 
           preencherFiltro();
@@ -111,8 +109,8 @@
 
       let dadosFiltrados = dadosExcel.filter(d => d.filtro === filtroSelecionado);
 
-      let valor12Total = dadosFiltrados.reduce((acc, curr) => acc + (curr.valor12 || 0), 0);
-      let valor40Total = dadosFiltrados.reduce((acc, curr) => acc + (curr.valor40 || 0), 0);
+      let clientes = dadosFiltrados.map(d => d.cliente);
+      let lucros = dadosFiltrados.map(d => d.lucro);
 
       if (chart) {
         chart.destroy();
@@ -120,19 +118,32 @@
 
       let ctx = document.getElementById('resultadoChart').getContext('2d');
       chart = new Chart(ctx, {
-        type: 'pie',
+        type: 'bar', // Mudei o gráfico para "bar" (barras) para melhor visualização
         data: {
-          labels: ['Coluna 12', 'Coluna 40'],
+          labels: clientes, // Clientes como rótulos
           datasets: [{
-            data: [valor12Total, valor40Total],
-            backgroundColor: ['#36A2EB', '#FF6384'],
+            label: 'Lucro',
+            data: lucros,
+            backgroundColor: '#36A2EB',
           }]
         },
         options: {
           responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          },
           plugins: {
             legend: {
               position: 'top',
+            },
+            tooltip: {
+              callbacks: {
+                label: function(tooltipItem) {
+                  return 'Lucro: ' + tooltipItem.raw;
+                }
+              }
             }
           }
         }
@@ -141,5 +152,4 @@
   </script>
 
 </body>
-
 </html>

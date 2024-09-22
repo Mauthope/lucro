@@ -13,10 +13,11 @@
       margin: 0;
       padding: 0;
       display: flex;
-      justify-content: center;
+      justify-content: flex-start;
       align-items: center;
       flex-direction: column;
       height: 100vh;
+      overflow-y: auto; /* Habilitar barra de rolagem para toda a página */
     }
 
     .container {
@@ -48,6 +49,8 @@
 
     #chartContainer, #chartContainer2 {
       margin-top: 20px;
+      max-height: 400px; /* Limitar a altura para ativar a rolagem se necessário */
+      overflow-y: auto; /* Ativar barra de rolagem dentro dos gráficos */
     }
 
     canvas {

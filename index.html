@@ -109,8 +109,12 @@
 
       let dadosFiltrados = dadosExcel.filter(d => d.filtro === filtroSelecionado);
 
+      // Ordenar os dados filtrados pelo lucro em ordem decrescente
+      dadosFiltrados.sort((a, b) => b.lucro - a.lucro);
+
       let clientes = dadosFiltrados.map(d => d.cliente);
       let lucros = dadosFiltrados.map(d => d.lucro);
+      let cores = lucros.map(lucro => lucro < 0 ? '#FF6384' : '#36A2EB'); // Vermelho para valores negativos
 
       if (chart) {
         chart.destroy();
@@ -118,13 +122,13 @@
 
       let ctx = document.getElementById('resultadoChart').getContext('2d');
       chart = new Chart(ctx, {
-        type: 'bar', // Mudei o gráfico para "bar" (barras) para melhor visualização
+        type: 'bar',
         data: {
           labels: clientes, // Clientes como rótulos
           datasets: [{
             label: 'Lucro',
             data: lucros,
-            backgroundColor: '#36A2EB',
+            backgroundColor: cores, // Aplicar cores baseadas nos lucros (negativo: vermelho)
           }]
         },
         options: {

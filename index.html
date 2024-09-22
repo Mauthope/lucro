@@ -61,7 +61,7 @@
 
     <label for="filtro">Selecione um filtro (Coluna 7):</label>
     <select id="filtro" onchange="gerarGrafico()">
-      <option value="">Escolha um valor</option>
+      <option value="">Todos os clientes</option>
     </select>
 
     <div id="chartContainer">
@@ -88,6 +88,7 @@
           }));
 
           preencherFiltro();
+          gerarGrafico(); // Gera o gráfico com todos os dados por padrão
         });
     };
 
@@ -105,9 +106,8 @@
     function gerarGrafico() {
       let filtroSelecionado = document.getElementById('filtro').value;
 
-      if (!filtroSelecionado) return;
-
-      let dadosFiltrados = dadosExcel.filter(d => d.filtro === filtroSelecionado);
+      let dadosFiltrados = filtroSelecionado ? 
+        dadosExcel.filter(d => d.filtro === filtroSelecionado) : dadosExcel;
 
       // Ordenar os dados filtrados pelo lucro em ordem decrescente
       dadosFiltrados.sort((a, b) => b.lucro - a.lucro);

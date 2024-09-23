@@ -316,52 +316,69 @@
       });
     }
 
-    function gerarGraficoPercentual() {
-      let clienteSelecionado = document.getElementById('filtroPercentual').value;
+function gerarGraficoPercentual() {
+  let clienteSelecionado = document.getElementById('filtroPercentual').value;
 
-      let dadosFiltrados = clienteSelecionado ? 
-        dadosExcel.filter(d => d.cliente === clienteSelecionado) : dadosExcel;
+  let dadosFiltrados = clienteSelecionado ? 
+    dadosExcel.filter(d => d.cliente === clienteSelecionado) : dadosExcel;
 
-      let clientes = dadosFiltrados.map(d => d.cliente);
-      let lucrosPercentuais = dadosFiltrados.map(d => d.lucroPercentual);
+  dadosFiltrados.sort((a, b) => b.lucroPercentual - a.lucroPercentual);
 
-      if (chartPercentual) {
-        chartPercentual.destroy();
-      }
+  let clientes = dadosFiltrados.map(d => d.cliente);
+  let percentuais = dadosFiltrados.map(d => d.lucroPercentual);
+  let cores = percentuais.map(p => p < 0 ? '#FF6384' : '#36A2EB');
 
-      let ctx = document.getElementById('percentualChart').getContext('2d');
-      chartPercentual = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: clientes,
-          datasets: [{
-            label: 'Lucro Percentual',
-            data: lucrosPercentuais,
-            backgroundColor: '#FF6384',
-            fill: true,
-            borderColor: '#FF6384'
-          },
-          {
-            label: 'Meta Lucro 10%',
-            data: Array(clientes.length).fill(10),
-            backgroundColor: 'rgba(0, 255, 0, 0.2)',
-            fill: true,
-            borderColor: '#00FF00',
-            borderDash: [5, 5],
-            type: 'line'
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: true,
-              suggestedMax: 20
+  if (chartPercentual) {
+    chartPercentual.destroy();
+  }
+
+  let ctx = document.getElementById('percentualChart').getContext('2d');
+  chartPercentual = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: clientes,
+      datasets: [{
+        label: 'Lucro Percentual',
+        data: percentuais,
+        backgroundColor: cores,
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          suggestedMax: Math.max(10, Math.max(...percentuais)), // Garantir que 10% esteja visível
+          ticks: {
+            callback: function(value) {
+              return value + "%";
             }
           }
         }
-      });
+      },
+      plugins: {
+        annotation: {
+          annotations: {
+            line1: {
+              type: 'line',
+              yMin: 10,
+              yMax: 10,
+              borderColor: 'rgba(75, 192, 192, 1)',
+              borderWidth: 2,
+              label: {
+                content: 'Meta 10%',
+                enabled: true,
+                position: 'center'
+              }
+            }
+          }
+        }
+      }
     }
+  });
+}
+
   </script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gráfico Comparativo de Clientes e Lucro</title>
+  <title>Gráficos Comparativos</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -17,7 +17,7 @@
       align-items: center;
       flex-direction: column;
       height: 100vh;
-      overflow-y: auto; /* Habilitar barra de rolagem para toda a página */
+      overflow-y: auto; /* Habilitar barra de rolagem */
     }
 
     .container {
@@ -47,10 +47,10 @@
       background-color: #f9f9f9;
     }
 
-    #chartContainer, #chartContainer2 {
+    #chartContainer, #chartContainer2, #chartContainer3 {
       margin-top: 20px;
-      max-height: 400px; /* Limitar a altura para ativar a rolagem se necessário */
-      overflow-y: auto; /* Ativar barra de rolagem dentro dos gráficos */
+      max-height: 400px; /* Limitar a altura */
+      overflow-y: auto; /* Ativar barra de rolagem */
     }
 
     canvas {
@@ -87,10 +87,24 @@
     </div>
   </div>
 
+  <div class="container">
+    <h1>Gráfico Comparativo de Quantidade e Lucro por Unidade</h1>
+
+    <label for="filtroComparativo">Selecione um cliente (Coluna 12):</label>
+    <select id="filtroComparativo" onchange="gerarGraficoComparativo()">
+      <option value="">Todos os clientes</option>
+    </select>
+
+    <div id="chartContainer3">
+      <canvas id="comparativoChart"></canvas>
+    </div>
+  </div>
+
   <script>
     let dadosExcel = [];
     let chart = null;
     let chartLucroPorUnidade = null;
+    let chartComparativo = null;
 
     window.onload = function() {
       fetch('lucratividade.xlsx')
@@ -104,13 +118,16 @@
             filtro: row[6],   // Coluna 7 (filtro)
             cliente: row[11], // Coluna 12 (Cliente)
             lucro: row[39],   // Coluna 40 (Lucro)
-            quantidade: row[23] // Coluna 24 (Quantidade)
+            quantidade: row[23], // Coluna 24 (Quantidade)
+            lucroPorUnidade: row[41] / row[23] // Lucro por unidade (Coluna 42 / Coluna 24)
           }));
 
           preencherFiltro();
           preencherFiltroCliente();
+          preencherFiltroComparativo();
           gerarGrafico(); // Gera o gráfico com todos os dados por padrão
           gerarGraficoLucroPorUnidade(); // Gera o gráfico de lucro por unidade por padrão
+          gerarGraficoComparativo(); // Gera o gráfico comparativo por padrão
         });
     };
 
@@ -136,18 +153,28 @@
       });
     }
 
+    function preencherFiltroComparativo() {
+      let filtroComparativoSelect = document.getElementById('filtroComparativo');
+      let clientesUnicos = [...new Set(dadosExcel.map(d => d.cliente))];
+      clientesUnicos.forEach(cliente => {
+        let option = document.createElement('option');
+        option.value = cliente;
+        option.textContent = cliente;
+        filtroComparativoSelect.appendChild(option);
+      });
+    }
+
     function gerarGrafico() {
       let filtroSelecionado = document.getElementById('filtro').value;
 
       let dadosFiltrados = filtroSelecionado ? 
         dadosExcel.filter(d => d.filtro === filtroSelecionado) : dadosExcel;
 
-      // Ordenar os dados filtrados pelo lucro em ordem decrescente
       dadosFiltrados.sort((a, b) => b.lucro - a.lucro);
 
       let clientes = dadosFiltrados.map(d => d.cliente);
       let lucros = dadosFiltrados.map(d => d.lucro);
-      let cores = lucros.map(lucro => lucro < 0 ? '#FF6384' : '#36A2EB'); // Vermelho para valores negativos
+      let cores = lucros.map(lucro => lucro < 0 ? '#FF6384' : '#36A2EB');
 
       if (chart) {
         chart.destroy();
@@ -157,11 +184,11 @@
       chart = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: clientes, // Clientes como rótulos
+          labels: clientes,
           datasets: [{
             label: 'Lucro',
             data: lucros,
-            backgroundColor: cores, // Aplicar cores baseadas nos lucros (negativo: vermelho)
+            backgroundColor: cores,
           }]
         },
         options: {
@@ -171,18 +198,6 @@
               beginAtZero: true
             }
           },
-          plugins: {
-            legend: {
-              position: 'top',
-            },
-            tooltip: {
-              callbacks: {
-                label: function(tooltipItem) {
-                  return 'Lucro: ' + tooltipItem.raw;
-                }
-              }
-            }
-          }
         }
       });
     }
@@ -193,18 +208,16 @@
       let dadosFiltrados = clienteSelecionado ? 
         dadosExcel.filter(d => d.cliente === clienteSelecionado) : dadosExcel;
 
-      // Calcular lucro por unidade
       let dadosComLucroPorUnidade = dadosFiltrados.map(d => ({
         cliente: d.cliente,
         lucroPorUnidade: d.quantidade > 0 ? d.lucro / d.quantidade : 0
       }));
 
-      // Ordenar pelo lucro por unidade em ordem decrescente
       dadosComLucroPorUnidade.sort((a, b) => b.lucroPorUnidade - a.lucroPorUnidade);
 
       let clientes = dadosComLucroPorUnidade.map(d => d.cliente);
       let lucrosPorUnidade = dadosComLucroPorUnidade.map(d => d.lucroPorUnidade);
-      let cores = lucrosPorUnidade.map(lucro => lucro < 0 ? '#FF6384' : '#36A2EB'); // Vermelho para valores negativos
+      let cores = lucrosPorUnidade.map(lucro => lucro < 0 ? '#FF6384' : '#36A2EB');
 
       if (chartLucroPorUnidade) {
         chartLucroPorUnidade.destroy();
@@ -214,11 +227,11 @@
       chartLucroPorUnidade = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: clientes, // Clientes como rótulos
+          labels: clientes,
           datasets: [{
             label: 'Lucro por Unidade',
             data: lucrosPorUnidade,
-            backgroundColor: cores, // Aplicar cores baseadas nos lucros por unidade (negativo: vermelho)
+            backgroundColor: cores,
           }]
         },
         options: {
@@ -228,18 +241,50 @@
               beginAtZero: true
             }
           },
-          plugins: {
-            legend: {
-              position: 'top',
-            },
-            tooltip: {
-              callbacks: {
-                label: function(tooltipItem) {
-                  return 'Lucro por Unidade: ' + tooltipItem.raw;
-                }
-              }
+        }
+      });
+    }
+
+    function gerarGraficoComparativo() {
+      let clienteSelecionado = document.getElementById('filtroComparativo').value;
+
+      let dadosFiltrados = clienteSelecionado ? 
+        dadosExcel.filter(d => d.cliente === clienteSelecionado) : dadosExcel;
+
+      dadosFiltrados.sort((a, b) => b.quantidade - a.quantidade);
+
+      let clientes = dadosFiltrados.map(d => d.cliente);
+      let quantidades = dadosFiltrados.map(d => d.quantidade);
+      let lucrosPorUnidade = dadosFiltrados.map(d => d.lucroPorUnidade);
+      let coresLucro = lucrosPorUnidade.map(lucro => lucro < 0 ? '#FF6384' : '#FFA500');
+
+      if (chartComparativo) {
+        chartComparativo.destroy();
+      }
+
+      let ctx = document.getElementById('comparativoChart').getContext('2d');
+      chartComparativo = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: clientes,
+          datasets: [{
+            label: 'Quantidade',
+            data: quantidades,
+            backgroundColor: '#36A2EB',
+          },
+          {
+            label: 'Lucro por Unidade',
+            data: lucrosPorUnidade,
+            backgroundColor: coresLucro,
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true
             }
-          }
+          },
         }
       });
     }

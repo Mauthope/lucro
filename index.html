@@ -75,7 +75,7 @@
   </div>
 
   <div class="container">
-    <h1>Gráfico de Lucro por Unidade Vendida</h1>
+    <h1>Gráfico de Lucro por Cliente</h1>
 
     <label for="filtroCliente">Selecione um cliente (Coluna 12):</label>
     <select id="filtroCliente" onchange="gerarGraficoLucroPorUnidade()">
@@ -88,7 +88,7 @@
   </div>
 
   <div class="container">
-    <h1>Gráfico Comparativo de Quantidade e Lucro por Unidade</h1>
+    <h1>Gráfico Comparativo de Quantidade e Lucro Total</h1>
 
     <label for="filtroComparativo">Selecione um cliente (Coluna 12):</label>
     <select id="filtroComparativo" onchange="gerarGraficoComparativo()">
@@ -119,14 +119,14 @@
             cliente: row[11], // Coluna 12 (Cliente)
             lucro: row[39],   // Coluna 40 (Lucro)
             quantidade: row[23], // Coluna 24 (Quantidade)
-            lucroPorUnidade: row[41] / row[23] // Lucro por unidade (Coluna 42 / Coluna 24)
+            lucroTotal: row[41]  // Lucro total (Coluna 42)
           }));
 
           preencherFiltro();
           preencherFiltroCliente();
           preencherFiltroComparativo();
           gerarGrafico(); // Gera o gráfico com todos os dados por padrão
-          gerarGraficoLucroPorUnidade(); // Gera o gráfico de lucro por unidade por padrão
+          gerarGraficoLucroPorUnidade(); // Gera o gráfico de lucro por cliente por padrão
           gerarGraficoComparativo(); // Gera o gráfico comparativo por padrão
         });
     };
@@ -208,16 +208,16 @@
       let dadosFiltrados = clienteSelecionado ? 
         dadosExcel.filter(d => d.cliente === clienteSelecionado) : dadosExcel;
 
-      let dadosComLucroPorUnidade = dadosFiltrados.map(d => ({
+      let dadosComLucroTotal = dadosFiltrados.map(d => ({
         cliente: d.cliente,
-        lucroPorUnidade: d.quantidade > 0 ? d.lucro / d.quantidade : 0
+        lucroTotal: d.lucroTotal
       }));
 
-      dadosComLucroPorUnidade.sort((a, b) => b.lucroPorUnidade - a.lucroPorUnidade);
+      dadosComLucroTotal.sort((a, b) => b.lucroTotal - a.lucroTotal);
 
-      let clientes = dadosComLucroPorUnidade.map(d => d.cliente);
-      let lucrosPorUnidade = dadosComLucroPorUnidade.map(d => d.lucroPorUnidade);
-      let cores = lucrosPorUnidade.map(lucro => lucro < 0 ? '#FF6384' : '#36A2EB');
+      let clientes = dadosComLucroTotal.map(d => d.cliente);
+      let lucrosTotais = dadosComLucroTotal.map(d => d.lucroTotal);
+      let cores = lucrosTotais.map(lucro => lucro < 0 ? '#FF6384' : '#36A2EB');
 
       if (chartLucroPorUnidade) {
         chartLucroPorUnidade.destroy();
@@ -229,8 +229,8 @@
         data: {
           labels: clientes,
           datasets: [{
-            label: 'Lucro por Unidade',
-            data: lucrosPorUnidade,
+            label: 'Lucro Total',
+            data: lucrosTotais,
             backgroundColor: cores,
           }]
         },
@@ -255,8 +255,8 @@
 
       let clientes = dadosFiltrados.map(d => d.cliente);
       let quantidades = dadosFiltrados.map(d => d.quantidade);
-      let lucrosPorUnidade = dadosFiltrados.map(d => d.lucroPorUnidade);
-      let coresLucro = lucrosPorUnidade.map(lucro => lucro < 0 ? '#FF6384' : '#FFA500');
+      let lucrosTotais = dadosFiltrados.map(d => d.lucroTotal);
+      let coresLucro = lucrosTotais.map(lucro => lucro < 0 ? '#FF6384' : '#FFA500');
 
       if (chartComparativo) {
         chartComparativo.destroy();
@@ -273,8 +273,8 @@
             backgroundColor: '#36A2EB',
           },
           {
-            label: 'Lucro por Unidade',
-            data: lucrosPorUnidade,
+            label: 'Lucro Total',
+            data: lucrosTotais,
             backgroundColor: coresLucro,
           }]
         },

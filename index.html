@@ -17,7 +17,7 @@
       align-items: center;
       flex-direction: column;
       height: 100vh;
-      overflow-y: auto; /* Habilitar barra de rolagem */
+      overflow-y: auto;
     }
 
     .container {
@@ -49,8 +49,8 @@
 
     #chartContainer, #chartContainer2, #chartContainer3, #chartContainer4 {
       margin-top: 20px;
-      max-height: 400px; /* Limitar a altura */
-      overflow-y: auto; /* Ativar barra de rolagem */
+      max-height: 400px;
+      overflow-y: auto;
     }
 
     canvas {
@@ -129,21 +129,21 @@
           let jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
           dadosExcel = jsonData.slice(1).map(row => ({
-            filtro: row[6],   // Coluna 7 (filtro)
-            cliente: row[11], // Coluna 12 (Cliente)
-            lucro: row[39],   // Coluna 40 (Lucro)
-            quantidade: row[23], // Coluna 24 (Quantidade)
-            lucroPercentual: row[41] // Coluna 42 (Lucro Percentual)
+            filtro: row[6],
+            cliente: row[11],
+            lucro: row[39],
+            quantidade: row[23],
+            lucroPercentual: row[41]
           }));
 
           preencherFiltro();
           preencherFiltroCliente();
           preencherFiltroComparativo();
           preencherFiltroPercentual();
-          gerarGrafico(); // Gera o gráfico com todos os dados por padrão
-          gerarGraficoLucroPorUnidade(); // Gera o gráfico de lucro por cliente por padrão
-          gerarGraficoComparativo(); // Gera o gráfico comparativo por padrão
-          gerarGraficoPercentual(); // Gera o gráfico percentual por padrão
+          gerarGrafico();
+          gerarGraficoLucroPorUnidade();
+          gerarGraficoComparativo();
+          gerarGraficoPercentual();
         });
     };
 
@@ -273,12 +273,9 @@
       let dadosFiltrados = clienteSelecionado ? 
         dadosExcel.filter(d => d.cliente === clienteSelecionado) : dadosExcel;
 
-      dadosFiltrados.sort((a, b) => b.quantidade - a.quantidade);
-
       let clientes = dadosFiltrados.map(d => d.cliente);
-      let quantidades = dadosFiltrados.map(d => d.quantidade);
-      let lucros = dadosFiltrados.map(d => d.lucro);
-      let coresLucro = lucros.map(lucro => lucro < 0 ? '#FF6384' : '#FFA500');
+      let quantidade = dadosFiltrados.map(d => d.quantidade);
+      let lucro = dadosFiltrados.map(d => d.lucro);
 
       if (chartComparativo) {
         chartComparativo.destroy();
@@ -286,19 +283,23 @@
 
       let ctx = document.getElementById('comparativoChart').getContext('2d');
       chartComparativo = new Chart(ctx, {
-        type: 'bar',
+        type: 'line',
         data: {
           labels: clientes,
-          datasets: [{
-            label: 'Quantidade',
-            data: quantidades,
-            backgroundColor: '#36A2EB',
-          },
-          {
-            label: 'Lucro Total',
-            data: lucros,
-            backgroundColor: coresLucro,
-          }]
+          datasets: [
+            {
+              label: 'Quantidade',
+              data: quantidade,
+              borderColor: '#FF6384',
+              fill: false
+            },
+            {
+              label: 'Lucro Total',
+              data: lucro,
+              borderColor: '#36A2EB',
+              fill: false
+            }
+          ]
         },
         options: {
           responsive: true,
@@ -317,11 +318,8 @@
       let dadosFiltrados = clienteSelecionado ? 
         dadosExcel.filter(d => d.cliente === clienteSelecionado) : dadosExcel;
 
-      dadosFiltrados.sort((a, b) => b.lucroPercentual - a.lucroPercentual);
-
       let clientes = dadosFiltrados.map(d => d.cliente);
-      let percentuais = dadosFiltrados.map(d => d.lucroPercentual);
-      let cores = percentuais.map(p => p < 0 ? '#FF6384' : '#36A2EB');
+      let lucroPercentual = dadosFiltrados.map(d => d.lucroPercentual);
 
       if (chartPercentual) {
         chartPercentual.destroy();
@@ -329,14 +327,15 @@
 
       let ctx = document.getElementById('percentualChart').getContext('2d');
       chartPercentual = new Chart(ctx, {
-        type: 'bar',
+        type: 'line',
         data: {
           labels: clientes,
           datasets: [{
             label: 'Lucro Percentual',
-            data: percentuais,
-            backgroundColor: cores,
-            borderWidth: 1
+            data: lucroPercentual,
+            borderColor: '#FFA500',
+            fill: false,
+            borderWidth: 3,
           }]
         },
         options: {
@@ -344,29 +343,24 @@
           scales: {
             y: {
               beginAtZero: true,
-              ticks: {
-                callback: function(value) {
-                  return value + "%";
-                }
-              }
+              suggestedMax: 0.1,  // Definir como 10% (ou 0.1)
             }
           },
           plugins: {
             annotation: {
-              annotations: {
-                line1: {
-                  type: 'line',
-                  yMin: 15,
-                  yMax: 15,
-                  borderColor: 'rgba(75, 192, 192, 1)',
-                  borderWidth: 2,
-                  label: {
-                    content: 'Meta 15%',
-                    enabled: true,
-                    position: 'center'
-                  }
+              annotations: [{
+                type: 'line',
+                yMin: 0.1,  // Meta de 10%
+                yMax: 0.1,
+                borderColor: 'red',
+                borderWidth: 2,
+                label: {
+                  content: 'Meta 10%',
+                  enabled: true,
+                  position: 'start',
+                  backgroundColor: 'rgba(255,99,132,0.8)'
                 }
-              }
+              }]
             }
           }
         }

@@ -17,7 +17,7 @@
       align-items: center;
       flex-direction: column;
       height: 100vh;
-      overflow-y: auto; /* Habilitar barra de rolagem */
+      overflow-y: auto;
     }
 
     .container {
@@ -49,8 +49,8 @@
 
     #chartContainer, #chartContainer2, #chartContainer3, #chartContainer4 {
       margin-top: 20px;
-      max-height: 400px; /* Limitar a altura */
-      overflow-y: auto; /* Ativar barra de rolagem */
+      max-height: 400px;
+      overflow-y: auto;
     }
 
     canvas {
@@ -129,21 +129,21 @@
           let jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
           dadosExcel = jsonData.slice(1).map(row => ({
-            filtro: row[6],   // Coluna 7 (filtro)
-            cliente: row[11], // Coluna 12 (Cliente)
-            lucro: row[39],   // Coluna 40 (Lucro)
-            quantidade: row[23], // Coluna 24 (Quantidade)
-            lucroPercentual: row[41] // Coluna 42 (Lucro Percentual)
+            filtro: row[6],   
+            cliente: row[11], 
+            lucro: row[39],   
+            quantidade: row[23], 
+            lucroPercentual: row[41] 
           }));
 
           preencherFiltro();
           preencherFiltroCliente();
           preencherFiltroComparativo();
           preencherFiltroPercentual();
-          gerarGrafico(); // Gera o gráfico com todos os dados por padrão
-          gerarGraficoLucroPorUnidade(); // Gera o gráfico de lucro por cliente por padrão
-          gerarGraficoComparativo(); // Gera o gráfico comparativo por padrão
-          gerarGraficoPercentual(); // Gera o gráfico percentual por padrão
+          gerarGrafico(); 
+          gerarGraficoLucroPorUnidade(); 
+          gerarGraficoComparativo(); 
+          gerarGraficoPercentual(); 
         });
     };
 
@@ -273,12 +273,11 @@
       let dadosFiltrados = clienteSelecionado ? 
         dadosExcel.filter(d => d.cliente === clienteSelecionado) : dadosExcel;
 
-      dadosFiltrados.sort((a, b) => b.quantidade - a.quantidade);
+      dadosFiltrados.sort((a, b) => b.lucro - a.lucro);
 
       let clientes = dadosFiltrados.map(d => d.cliente);
-      let quantidades = dadosFiltrados.map(d => d.quantidade);
       let lucros = dadosFiltrados.map(d => d.lucro);
-      let coresLucro = lucros.map(lucro => lucro < 0 ? '#FF6384' : '#FFA500');
+      let quantidades = dadosFiltrados.map(d => d.quantidade);
 
       if (chartComparativo) {
         chartComparativo.destroy();
@@ -289,22 +288,39 @@
         type: 'bar',
         data: {
           labels: clientes,
-          datasets: [{
-            label: 'Quantidade',
-            data: quantidades,
-            backgroundColor: '#36A2EB',
-          },
-          {
-            label: 'Lucro Total',
-            data: lucros,
-            backgroundColor: coresLucro,
-          }]
+          datasets: [
+            {
+              label: 'Quantidade',
+              data: quantidades,
+              backgroundColor: '#36A2EB',
+              yAxisID: 'y1',
+            },
+            {
+              label: 'Lucro',
+              data: lucros,
+              backgroundColor: '#FFA500',
+              yAxisID: 'y2',
+            }
+          ]
         },
         options: {
           responsive: true,
           scales: {
-            y: {
-              beginAtZero: true
+            y1: {
+              beginAtZero: true,
+              position: 'left',
+              title: {
+                display: true,
+                text: 'Quantidade',
+              }
+            },
+            y2: {
+              beginAtZero: true,
+              position: 'right',
+              title: {
+                display: true,
+                text: 'Lucro',
+              }
             }
           },
         }
@@ -320,8 +336,7 @@
       dadosFiltrados.sort((a, b) => b.lucroPercentual - a.lucroPercentual);
 
       let clientes = dadosFiltrados.map(d => d.cliente);
-      let percentuais = dadosFiltrados.map(d => d.lucroPercentual);
-      let cores = percentuais.map(p => p < 0 ? '#FF6384' : '#36A2EB');
+      let lucrosPercentuais = dadosFiltrados.map(d => d.lucroPercentual);
 
       if (chartPercentual) {
         chartPercentual.destroy();
@@ -329,41 +344,35 @@
 
       let ctx = document.getElementById('percentualChart').getContext('2d');
       chartPercentual = new Chart(ctx, {
-        type: 'bar',
+        type: 'line',
         data: {
           labels: clientes,
           datasets: [{
             label: 'Lucro Percentual',
-            data: percentuais,
-            backgroundColor: cores,
-            borderWidth: 1
+            data: lucrosPercentuais,
+            borderColor: '#FF6384',
+            fill: false,
           }]
         },
         options: {
           responsive: true,
           scales: {
             y: {
-              beginAtZero: true,
-              ticks: {
-                callback: function(value) {
-                  return value + "%";
-                }
-              }
+              beginAtZero: true
             }
           },
           plugins: {
             annotation: {
               annotations: {
-                line1: {
+                line: {
                   type: 'line',
-                  yMin: 15,
-                  yMax: 15,
-                  borderColor: 'rgba(75, 192, 192, 1)',
+                  yMin: 10,
+                  yMax: 10,
+                  borderColor: 'green',
                   borderWidth: 2,
                   label: {
-                    content: 'Meta 15%',
                     enabled: true,
-                    position: 'center'
+                    content: 'Meta 10%'
                   }
                 }
               }
@@ -373,6 +382,5 @@
       });
     }
   </script>
-
 </body>
 </html>

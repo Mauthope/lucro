@@ -75,7 +75,7 @@
   </div>
 
   <div class="container">
-    <h1>Gráfico de Lucro por Cliente</h1>
+    <h1>Gráfico de Lucro Total por Cliente</h1>
 
     <label for="filtroCliente">Selecione um cliente (Coluna 12):</label>
     <select id="filtroCliente" onchange="gerarGraficoLucroPorUnidade()">
@@ -119,7 +119,6 @@
             cliente: row[11], // Coluna 12 (Cliente)
             lucro: row[39],   // Coluna 40 (Lucro)
             quantidade: row[23], // Coluna 24 (Quantidade)
-            lucroTotal: row[41]  // Lucro total (Coluna 40)
           }));
 
           preencherFiltro();
@@ -208,16 +207,11 @@
       let dadosFiltrados = clienteSelecionado ? 
         dadosExcel.filter(d => d.cliente === clienteSelecionado) : dadosExcel;
 
-      let dadosComLucroTotal = dadosFiltrados.map(d => ({
-        cliente: d.cliente,
-        lucroTotal: d.lucroTotal
-      }));
+      dadosFiltrados.sort((a, b) => b.lucro - a.lucro);
 
-      dadosComLucroTotal.sort((a, b) => b.lucroTotal - a.lucroTotal);
-
-      let clientes = dadosComLucroTotal.map(d => d.cliente);
-      let lucrosTotais = dadosComLucroTotal.map(d => d.lucroTotal);
-      let cores = lucrosTotais.map(lucro => lucro < 0 ? '#FF6384' : '#36A2EB');
+      let clientes = dadosFiltrados.map(d => d.cliente);
+      let lucros = dadosFiltrados.map(d => d.lucro);
+      let cores = lucros.map(lucro => lucro < 0 ? '#FF6384' : '#36A2EB');
 
       if (chartLucroPorUnidade) {
         chartLucroPorUnidade.destroy();
@@ -230,7 +224,7 @@
           labels: clientes,
           datasets: [{
             label: 'Lucro Total',
-            data: lucrosTotais,
+            data: lucros,
             backgroundColor: cores,
           }]
         },
@@ -255,8 +249,8 @@
 
       let clientes = dadosFiltrados.map(d => d.cliente);
       let quantidades = dadosFiltrados.map(d => d.quantidade);
-      let lucrosTotais = dadosFiltrados.map(d => d.lucroTotal);
-      let coresLucro = lucrosTotais.map(lucro => lucro < 0 ? '#FF6384' : '#FFA500');
+      let lucros = dadosFiltrados.map(d => d.lucro);
+      let coresLucro = lucros.map(lucro => lucro < 0 ? '#FF6384' : '#FFA500');
 
       if (chartComparativo) {
         chartComparativo.destroy();
@@ -274,7 +268,7 @@
           },
           {
             label: 'Lucro Total',
-            data: lucrosTotais,
+            data: lucros,
             backgroundColor: coresLucro,
           }]
         },

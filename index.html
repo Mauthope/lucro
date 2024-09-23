@@ -247,13 +247,14 @@
 
       let ctx = document.getElementById('lucroPorUnidadeChart').getContext('2d');
       chartLucroPorUnidade = new Chart(ctx, {
-        type: 'bar',
+        type: 'line',
         data: {
           labels: clientes,
           datasets: [{
             label: 'Lucro Total',
             data: lucros,
             backgroundColor: coresLucro,
+            fill: true,
           }]
         },
         options: {
@@ -262,7 +263,7 @@
             y: {
               beginAtZero: true
             }
-          },
+          }
         }
       });
     }
@@ -273,12 +274,9 @@
       let dadosFiltrados = clienteSelecionado ? 
         dadosExcel.filter(d => d.cliente === clienteSelecionado) : dadosExcel;
 
-      dadosFiltrados.sort((a, b) => b.quantidade - a.quantidade);
-
       let clientes = dadosFiltrados.map(d => d.cliente);
-      let quantidades = dadosFiltrados.map(d => d.quantidade);
       let lucros = dadosFiltrados.map(d => d.lucro);
-      let coresLucro = lucros.map(lucro => lucro < 0 ? '#FF6384' : '#FFA500');
+      let quantidades = dadosFiltrados.map(d => d.quantidade);
 
       if (chartComparativo) {
         chartComparativo.destroy();
@@ -290,23 +288,30 @@
         data: {
           labels: clientes,
           datasets: [{
-            label: 'Quantidade',
-            data: quantidades,
+            label: 'Lucro',
+            data: lucros,
             backgroundColor: '#36A2EB',
+            yAxisID: 'y',
           },
           {
-            label: 'Lucro Total',
-            data: lucros,
-            backgroundColor: coresLucro,
+            label: 'Quantidade',
+            data: quantidades,
+            backgroundColor: '#FFCE56',
+            yAxisID: 'y1',
           }]
         },
         options: {
           responsive: true,
           scales: {
             y: {
-              beginAtZero: true
+              beginAtZero: true,
+              position: 'left'
+            },
+            y1: {
+              beginAtZero: true,
+              position: 'right'
             }
-          },
+          }
         }
       });
     }
@@ -317,11 +322,8 @@
       let dadosFiltrados = clienteSelecionado ? 
         dadosExcel.filter(d => d.cliente === clienteSelecionado) : dadosExcel;
 
-      dadosFiltrados.sort((a, b) => b.lucroPercentual - a.lucroPercentual);
-
       let clientes = dadosFiltrados.map(d => d.cliente);
-      let percentuais = dadosFiltrados.map(d => d.lucroPercentual);
-      let cores = percentuais.map(p => p < 0 ? '#FF6384' : '#36A2EB');
+      let lucrosPercentuais = dadosFiltrados.map(d => d.lucroPercentual);
 
       if (chartPercentual) {
         chartPercentual.destroy();
@@ -329,14 +331,24 @@
 
       let ctx = document.getElementById('percentualChart').getContext('2d');
       chartPercentual = new Chart(ctx, {
-        type: 'bar',
+        type: 'line',
         data: {
           labels: clientes,
           datasets: [{
             label: 'Lucro Percentual',
-            data: percentuais,
-            backgroundColor: cores,
-            borderWidth: 1
+            data: lucrosPercentuais,
+            backgroundColor: '#FF6384',
+            fill: true,
+            borderColor: '#FF6384'
+          },
+          {
+            label: 'Meta Lucro 10%',
+            data: Array(clientes.length).fill(10),
+            backgroundColor: 'rgba(0, 255, 0, 0.2)',
+            fill: true,
+            borderColor: '#00FF00',
+            borderDash: [5, 5],
+            type: 'line'
           }]
         },
         options: {
@@ -344,35 +356,12 @@
           scales: {
             y: {
               beginAtZero: true,
-              ticks: {
-                callback: function(value) {
-                  return value + "%";
-                }
-              }
-            }
-          },
-          plugins: {
-            annotation: {
-              annotations: {
-                line1: {
-                  type: 'line',
-                  yMin: 15,
-                  yMax: 15,
-                  borderColor: 'rgba(75, 192, 192, 1)',
-                  borderWidth: 2,
-                  label: {
-                    content: 'Meta 15%',
-                    enabled: true,
-                    position: 'center'
-                  }
-                }
-              }
+              suggestedMax: 20
             }
           }
         }
       });
     }
   </script>
-
 </body>
 </html>

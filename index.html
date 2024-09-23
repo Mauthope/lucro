@@ -47,7 +47,7 @@
       background-color: #f9f9f9;
     }
 
-    #chartContainer, #chartContainer2, #chartContainer3 {
+    #chartContainer, #chartContainer2, #chartContainer3, #chartContainer4 {
       margin-top: 20px;
       max-height: 400px; /* Limitar a altura */
       overflow-y: auto; /* Ativar barra de rolagem */
@@ -100,11 +100,25 @@
     </div>
   </div>
 
+  <div class="container">
+    <h1>Gráfico de Lucro Percentual</h1>
+
+    <label for="filtroPercentual">Selecione um cliente (Coluna 12):</label>
+    <select id="filtroPercentual" onchange="gerarGraficoPercentual()">
+      <option value="">Todos os clientes</option>
+    </select>
+
+    <div id="chartContainer4">
+      <canvas id="percentualChart"></canvas>
+    </div>
+  </div>
+
   <script>
     let dadosExcel = [];
     let chart = null;
     let chartLucroPorUnidade = null;
     let chartComparativo = null;
+    let chartPercentual = null;
 
     window.onload = function() {
       fetch('lucratividade.xlsx')
@@ -119,14 +133,17 @@
             cliente: row[11], // Coluna 12 (Cliente)
             lucro: row[39],   // Coluna 40 (Lucro)
             quantidade: row[23], // Coluna 24 (Quantidade)
+            lucroPercentual: row[41] // Coluna 42 (Lucro Percentual)
           }));
 
           preencherFiltro();
           preencherFiltroCliente();
           preencherFiltroComparativo();
+          preencherFiltroPercentual();
           gerarGrafico(); // Gera o gráfico com todos os dados por padrão
           gerarGraficoLucroPorUnidade(); // Gera o gráfico de lucro por cliente por padrão
           gerarGraficoComparativo(); // Gera o gráfico comparativo por padrão
+          gerarGraficoPercentual(); // Gera o gráfico percentual por padrão
         });
     };
 
@@ -160,6 +177,17 @@
         option.value = cliente;
         option.textContent = cliente;
         filtroComparativoSelect.appendChild(option);
+      });
+    }
+
+    function preencherFiltroPercentual() {
+      let filtroPercentualSelect = document.getElementById('filtroPercentual');
+      let clientesUnicos = [...new Set(dadosExcel.map(d => d.cliente))];
+      clientesUnicos.forEach(cliente => {
+        let option = document.createElement('option');
+        option.value = cliente;
+        option.textContent = cliente;
+        filtroPercentualSelect.appendChild(option);
       });
     }
 
@@ -211,7 +239,7 @@
 
       let clientes = dadosFiltrados.map(d => d.cliente);
       let lucros = dadosFiltrados.map(d => d.lucro);
-      let cores = lucros.map(lucro => lucro < 0 ? '#FF6384' : '#36A2EB');
+      let coresLucro = lucros.map(lucro => lucro < 0 ? '#FF6384' : '#FFA500');
 
       if (chartLucroPorUnidade) {
         chartLucroPorUnidade.destroy();
@@ -225,7 +253,7 @@
           datasets: [{
             label: 'Lucro Total',
             data: lucros,
-            backgroundColor: cores,
+            backgroundColor: coresLucro,
           }]
         },
         options: {
@@ -279,6 +307,68 @@
               beginAtZero: true
             }
           },
+        }
+      });
+    }
+
+    function gerarGraficoPercentual() {
+      let clienteSelecionado = document.getElementById('filtroPercentual').value;
+
+      let dadosFiltrados = clienteSelecionado ? 
+        dadosExcel.filter(d => d.cliente === clienteSelecionado) : dadosExcel;
+
+      dadosFiltrados.sort((a, b) => b.lucroPercentual - a.lucroPercentual);
+
+      let clientes = dadosFiltrados.map(d => d.cliente);
+      let percentuais = dadosFiltrados.map(d => d.lucroPercentual);
+      let cores = percentuais.map(p => p < 0 ? '#FF6384' : '#36A2EB');
+
+      if (chartPercentual) {
+        chartPercentual.destroy();
+      }
+
+      let ctx = document.getElementById('percentualChart').getContext('2d');
+      chartPercentual = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: clientes,
+          datasets: [{
+            label: 'Lucro Percentual',
+            data: percentuais,
+            backgroundColor: cores,
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return value + "%";
+                }
+              }
+            }
+          },
+          plugins: {
+            annotation: {
+              annotations: {
+                line1: {
+                  type: 'line',
+                  yMin: 15,
+                  yMax: 15,
+                  borderColor: 'rgba(75, 192, 192, 1)',
+                  borderWidth: 2,
+                  label: {
+                    content: 'Meta 15%',
+                    enabled: true,
+                    position: 'center'
+                  }
+                }
+              }
+            }
+          }
         }
       });
     }
